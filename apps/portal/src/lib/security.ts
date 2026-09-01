@@ -22,10 +22,12 @@ export function assertSameOrigin(request: Request) {
 
   const requestUrl = new URL(request.url);
   const forwardedProto = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
   const protocol = forwardedProto === 'https' || forwardedProto === 'http'
     ? forwardedProto
     : requestUrl.protocol.slice(0, -1);
-  return origin === `${protocol}://${requestUrl.host}`;
+  const host = forwardedHost || requestUrl.host;
+  return origin === `${protocol}://${host}`;
 }
 
 export function rejectUnsafeRequest(context: APIContext) {
