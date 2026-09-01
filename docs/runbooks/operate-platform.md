@@ -5,14 +5,15 @@ This runbook enables host-side observation, optional encrypted R2 backups, and t
 ## Quick path
 
 1. Install the versioned registry, scripts, and systemd units from this checkout.
-2. Create `/srv/platform/data/observations` as root-owned `0750`; mount it read-only into the portal through Compose.
+2. Create `/srv/platform/data/observations` as root-owned, numeric-group `10001`, mode `0750`; mount it read-only into the portal through Compose.
 3. Enable the observer timer, verify the authenticated dashboard, then make explicit backup and alert decisions before enabling their timers.
 
 ## Security boundaries
 
 | Boundary | Decision |
 | --- | --- |
-| Portal | Reads only three fixed snapshot filenames from `/observations`; no host paths, shell commands, Docker socket, or journal access. |
+| Portal | Reads only three fixed snapshot filenames from `/observations`; numeric group `10001` grants directory traversal and file reads, never writes. No host paths, shell commands, Docker socket, or journal access. |
+| Snapshots | Writers atomically replace root-owned, group-`10001`, `0640` files. The host directory is root-owned, group-`10001`, `0750`; no host login user is created. |
 | Observer | Reads only `managed-apps.v1.json`, a fixed loopback URL, and the fixed `host-system-log` source; output is redacted and capped at 100 lines. |
 | Backup | Backs up only `/srv/platform/data/portal` with restic encryption; it does nothing when required environment values are absent. |
 | Alerts | Posts only changed states when `ALERT_WEBHOOK_URL` is present; evidence is capped at 20 transitions. |
@@ -22,14 +23,15 @@ This runbook enables host-side observation, optional encrypted R2 backups, and t
 Install the units as root, then enable only the observer timer:
 
 ```bash
-sudo install -d -o root -g root -m 0750 /srv/platform/data/observations /srv/platform/data/alerts
+sudo install -d -o root -g 10001 -m 0750 /srv/platform/data/observations
+sudo install -d -o root -g root -m 0750 /srv/platform/data/alerts
 sudo install -o root -g root -m 0644 /srv/platform/src/lea-ramon-dev/infra/systemd/lea-ramon-observer.{service,timer} /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now lea-ramon-observer.timer
 sudo systemctl start lea-ramon-observer.service
 ```
 
-Verify `platform-observation.json` exists, then log in to `/admin`. Confirm that Portal health is observed and Balne shows `not_configured`. Do not expose the observation directory through Nginx.
+Verify `platform-observation.json` is root-owned, group `10001`, mode `0640`, then log in to `/admin`. Confirm that Portal health is observed and Balne shows `not_configured`. Do not expose the observation directory through Nginx.
 
 ## Configure R2 backups
 

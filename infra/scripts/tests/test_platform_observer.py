@@ -1,9 +1,11 @@
 import importlib.machinery
 import importlib.util
 import json
+import stat
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import call, patch
 
 loader = importlib.machinery.SourceFileLoader("observer", str(Path(__file__).parents[1] / "platform-observer.py"))
 spec = importlib.util.spec_from_loader(loader.name, loader)
@@ -35,8 +37,13 @@ class ObserverTests(unittest.TestCase):
     def test_atomic_write_produces_parseable_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "observation.json"
-            observer.atomic_write(output, {"schema": "test"})
+            with patch.object(observer.os, "chown") as chown:
+                observer.atomic_write(output, {"schema": "test"})
             self.assertEqual(json.loads(output.read_text())["schema"], "test")
+            self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o640)
+            self.assertEqual(stat.S_IMODE(output.parent.stat().st_mode), 0o750)
+            self.assertEqual(chown.call_args_list[0], call(output.parent, 0, observer.PORTAL_GID))
+            self.assertEqual(chown.call_args_list[1].args[1:], (0, observer.PORTAL_GID))
 
 
 if __name__ == "__main__":

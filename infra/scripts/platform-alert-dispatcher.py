@@ -10,15 +10,21 @@ from urllib.request import Request, urlopen
 OBSERVATIONS = Path("/srv/platform/data/observations")
 STATE = Path("/srv/platform/data/alerts/dispatch-state.json")
 OUTPUT = OBSERVATIONS / "alert-snapshot.json"
+PORTAL_GID = 10001
 
 def now(): return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 def load(path):
     try: return json.loads(path.read_text())
     except (OSError, json.JSONDecodeError): return None
-def write(path, payload):
+def write(path, payload, group=None):
     path.parent.mkdir(mode=0o750, parents=True, exist_ok=True)
+    if group is not None:
+        os.chown(path.parent, 0, group)
+        os.chmod(path.parent, 0o750)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as f:
         json.dump(payload, f, separators=(",", ":")); f.write("\n"); name = f.name
+    if group is not None:
+        os.chown(name, 0, group)
     os.chmod(name, 0o640); os.replace(name, path)
 def current_states():
     observation, backup = load(OBSERVATIONS / "platform-observation.json"), load(OBSERVATIONS / "backup-snapshot.json")
@@ -38,16 +44,16 @@ def main():
     changes = transitions(prior["states"], states, stored is not None)
     evidence = (prior.get("evidence", []) + changes)[-20:]
     if not webhook:
-        write(OUTPUT, {"schema": "lea-ramon/alert/v1", "generated_at": now(), "status": "unconfigured", "evidence": evidence})
+        write(OUTPUT, {"schema": "lea-ramon/alert/v1", "generated_at": now(), "status": "unconfigured", "evidence": evidence}, PORTAL_GID)
         write(STATE, {"states": states, "evidence": evidence})
         return
     try:
         if changes:
             body = json.dumps({"source": "lea-ramon-platform", "transitions": changes}).encode()
             with urlopen(Request(webhook, data=body, method="POST", headers={"Content-Type": "application/json"}), timeout=5): pass
-        write(OUTPUT, {"schema": "lea-ramon/alert/v1", "generated_at": now(), "status": "healthy", "evidence": evidence})
+        write(OUTPUT, {"schema": "lea-ramon/alert/v1", "generated_at": now(), "status": "healthy", "evidence": evidence}, PORTAL_GID)
         write(STATE, {"states": states, "evidence": evidence})
     except Exception:
-        write(OUTPUT, {"schema": "lea-ramon/alert/v1", "generated_at": now(), "status": "failure", "evidence": evidence[-20:]})
+        write(OUTPUT, {"schema": "lea-ramon/alert/v1", "generated_at": now(), "status": "failure", "evidence": evidence[-20:]}, PORTAL_GID)
         raise
 if __name__ == "__main__": main()

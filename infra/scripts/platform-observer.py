@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 REGISTRY = Path("/srv/platform/src/lea-ramon-dev/config/platform/managed-apps.v1.json")
 OUTPUT = Path("/srv/platform/data/observations/platform-observation.json")
+PORTAL_GID = 10001
 MAX_LOG_LINES = 100
 LOG_SOURCES = {"host-system-log": Path("/var/log/syslog")}
 SECRET_PATTERNS = [
@@ -82,10 +83,13 @@ def collect_logs(apps):
 
 def atomic_write(path, payload):
     path.parent.mkdir(mode=0o750, parents=True, exist_ok=True)
+    os.chown(path.parent, 0, PORTAL_GID)
+    os.chmod(path.parent, 0o750)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as handle:
         json.dump(payload, handle, separators=(",", ":"), sort_keys=True)
         handle.write("\n")
         temp_name = handle.name
+    os.chown(temp_name, 0, PORTAL_GID)
     os.chmod(temp_name, 0o640)
     os.replace(temp_name, path)
 

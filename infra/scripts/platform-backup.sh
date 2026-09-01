@@ -2,11 +2,14 @@
 set -Eeuo pipefail
 
 output=/srv/platform/data/observations/backup-snapshot.json
-mkdir -p -m 0750 "$(dirname "$output")"
+observations_dir="$(dirname "$output")"
+mkdir -p -m 0750 "$observations_dir"
+chown root:10001 "$observations_dir"
+chmod 0750 "$observations_dir"
 
 write_snapshot() {
   local status="$1" evidence="$2"
-  SNAPSHOT_STATUS="$status" SNAPSHOT_EVIDENCE="$evidence" SNAPSHOT_OUTPUT="$output" python3 - <<'PY'
+  SNAPSHOT_STATUS="$status" SNAPSHOT_EVIDENCE="$evidence" SNAPSHOT_OUTPUT="$output" SNAPSHOT_GROUP=10001 python3 - <<'PY'
 import json, os, tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +17,7 @@ path = Path(os.environ["SNAPSHOT_OUTPUT"])
 payload = {"schema": "lea-ramon/backup/v1", "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "status": os.environ["SNAPSHOT_STATUS"], "evidence": [os.environ["SNAPSHOT_EVIDENCE"][:500]]}
 with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as f:
     json.dump(payload, f, separators=(",", ":")); f.write("\n"); name = f.name
+os.chown(name, 0, int(os.environ["SNAPSHOT_GROUP"]))
 os.chmod(name, 0o640); os.replace(name, path)
 PY
 }
