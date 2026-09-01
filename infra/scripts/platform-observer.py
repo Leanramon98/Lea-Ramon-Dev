@@ -4,8 +4,10 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 import time
+from types import MappingProxyType
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -14,24 +16,24 @@ from urllib.request import Request, urlopen
 REGISTRY = Path("/srv/platform/src/lea-ramon-dev/config/platform/managed-apps.v1.json")
 OUTPUT = Path("/srv/platform/data/observations/platform-observation.json")
 PORTAL_GID = 10001
-MAX_LOG_LINES = 100
-LOG_SOURCES = {"host-system-log": Path("/var/log/syslog")}
-SECRET_PATTERNS = [
-    re.compile(r"(?i)bearer\s+[A-Za-z0-9._~+/-]+=*"),
-    re.compile(r"(?i)(authorization|token|secret|password|api[_-]?key)\s*[:=]\s*[^\s,;]+"),
-    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
-]
+RUNTIME_SOURCES = MappingProxyType({
+    "balne": MappingProxyType({
+        "systemd_unit": "balne-landing.service",
+        "repository": Path("/srv/balne-landing"),
+        "health_check": MappingProxyType({
+            "url": "http://127.0.0.1:3000/",
+            "timeout_seconds": 5,
+            "expected_status": 200,
+        }),
+    }),
+})
+SYSTEMCTL = "/usr/bin/systemctl"
+GIT = "/usr/bin/git"
+SYSTEMD_STATES = {"active", "activating", "inactive", "deactivating", "failed"}
 
 
 def now():
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def redact(value):
-    value = value.replace("\x00", "")[:2000]
-    for pattern in SECRET_PATTERNS:
-        value = pattern.sub("[REDACTED]", value)
-    return value
 
 
 def health_check(config):
@@ -46,6 +48,30 @@ def health_check(config):
         return {"status": "unhealthy", "http_status": error.code}
     except (URLError, OSError, ValueError):
         return {"status": "unavailable"}
+
+
+def systemd_state(unit):
+    try:
+        result = subprocess.run(
+            [SYSTEMCTL, "show", "--property=ActiveState", "--value", unit],
+            check=False, capture_output=True, text=True, timeout=5,
+        )
+        state = result.stdout.strip()
+        return state if state in SYSTEMD_STATES else "unavailable"
+    except (OSError, subprocess.TimeoutExpired):
+        return "unavailable"
+
+
+def repository_revision(repository):
+    try:
+        result = subprocess.run(
+            [GIT, "-C", str(repository), "rev-parse", "--verify", "HEAD"],
+            check=False, capture_output=True, text=True, timeout=5,
+        )
+        revision = result.stdout.strip()
+        return revision if re.fullmatch(r"[0-9a-f]{40}", revision) else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
 
 
 def host_health():
@@ -71,24 +97,19 @@ def host_health():
 
 def app_observation(app):
     enabled = app.get("enabled") is True
-    return {
+    runtime = RUNTIME_SOURCES.get(app["id"]) if enabled else None
+    observation = {
         "id": app["id"], "display_name": app["display_name"], "enabled": enabled,
         "configuration_status": app.get("configuration_status", "configured" if enabled else "not_configured"),
         "public_url": app.get("public_url"), "release": app.get("release"),
-        "health": health_check(app.get("health_check")) if enabled else {"status": "not_configured"},
+        "health": health_check(runtime["health_check"]) if runtime else health_check(app.get("health_check")) if enabled else {"status": "not_configured"},
     }
-
-
-def collect_logs(apps):
-    requested = {source for app in apps if app.get("enabled") for source in app.get("log_sources", [])}
-    logs = []
-    for source in sorted(requested & LOG_SOURCES.keys()):
-        try:
-            lines = LOG_SOURCES[source].read_text(errors="replace").splitlines()[-MAX_LOG_LINES:]
-            logs.append({"source": source, "status": "available", "lines": [redact(line) for line in lines]})
-        except OSError:
-            logs.append({"source": source, "status": "unavailable", "lines": []})
-    return logs
+    if runtime:
+        observation["systemd_state"] = systemd_state(runtime["systemd_unit"])
+        revision = repository_revision(runtime["repository"])
+        if revision:
+            observation["release"] = {**(observation["release"] or {}), "commit": revision}
+    return observation
 
 
 def atomic_write(path, payload):
@@ -111,7 +132,7 @@ def main():
     apps = []
     for app in registry.get("apps", []):
         apps.append(app_observation(app))
-    atomic_write(OUTPUT, {"schema": "lea-ramon/observation/v1", "generated_at": now(), "status": "success", "apps": apps, "host": host_health(), "logs": collect_logs(registry["apps"])})
+    atomic_write(OUTPUT, {"schema": "lea-ramon/observation/v1", "generated_at": now(), "status": "success", "apps": apps, "host": host_health(), "logs": []})
 
 
 if __name__ == "__main__":

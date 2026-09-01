@@ -36,14 +36,14 @@ For local development, set `PORTAL_DATABASE_PATH=./data/portal.db`. Never commit
 
 ## Operations foundation
 
-The authenticated dashboard reads host-produced snapshots mounted read-only. The portal has no Docker socket, host journal, command execution interface, or writable observations mount. The active `portal` app is checked through its loopback health URL. `Balne` remains a disabled registry entry until its actual runtime, health endpoint, logs, and data ownership are verified.
+The authenticated dashboard reads host-produced snapshots mounted read-only. The portal has no Docker socket, host journal, command execution interface, or writable observations mount. The active `portal` app is checked through its loopback health URL. `Balne` is observed only through its fixed loopback health URL, fixed `balne-landing.service` active state, and fixed repository HEAD; it has no log, host-control, or modification capability.
 
 The observer, encrypted R2 backup runner, and alert dispatcher are opt-in systemd jobs. They remain unconfigured or disabled without their operator-managed environment files. See [the operations runbook](docs/runbooks/operate-platform.md) and [snapshot contracts](docs/platform-snapshot-schema.md).
 
 ## Remaining operator decisions
 
-- Cloudflare R2 account, bucket, bucket lock/lifecycle retention, least-privilege credentials, and restic password handling.
+- Cloudflare R2 account, private bucket, bucket-lock compatibility, least-privilege credentials, restic password handling, and the tracked restic-native retention policy. Never apply object-level lifecycle expiration to a live restic repository.
 - Alert destination and webhook secret.
-- Verified Balne runtime/service, health endpoint, safe log source, public URL, and data/backup ownership.
+- Balne data and backup ownership.
 
 See [the deployment runbook](docs/runbooks/deploy-portal.md) for the production procedure and operator prerequisites.

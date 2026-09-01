@@ -13,4 +13,4 @@ PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
 ReadWritePaths=/srv/platform/data/observations
-ReadOnlyPaths=/srv/platform/src/lea-ramon-dev/config/platform/managed-apps.v1.json /var/log/syslog /proc
+ReadOnlyPaths=/srv/platform/src/lea-ramon-dev/config/platform/managed-apps.v1.json /srv/balne-landing /proc

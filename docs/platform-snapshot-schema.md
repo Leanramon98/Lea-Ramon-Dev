@@ -16,7 +16,7 @@ Every snapshot includes `schema`, `generated_at` (UTC ISO-8601), and `status`. P
 
 ## Observation v1
 
-`apps` contains registry-derived `id`, `display_name`, `enabled`, `configuration_status`, `public_url`, optional `release` (`version` and/or `commit`), and a health result. Disabled apps use `health.status: "not_configured"`; entries with `configuration_status: "pending_configuration"` are inactive placeholders and emit no guessed endpoint. `host` reports aggregate CPU load, RAM, and filesystem usage when available. `logs` contains at most 100 redacted lines per fixed allowlisted source and never includes source paths or commands.
+`apps` contains registry-derived `id`, `display_name`, `enabled`, `configuration_status`, `public_url`, optional `release` (`version` and/or `commit`), and a health result. An app with a fixed allowlisted systemd runtime may include `systemd_state` (`active`, `activating`, `inactive`, `deactivating`, `failed`, or `unavailable`) and a current repository `release.commit`; neither exposes a service unit name, repository path, command, or raw output. Disabled apps use `health.status: "not_configured"`; entries with `configuration_status: "pending_configuration"` are inactive placeholders and emit no guessed endpoint. `host` reports aggregate CPU load, RAM, and filesystem usage when available. `logs` is retained as an empty array for v1 compatibility; the observer does not read journals or raw logs.
 
 ## Backup and alert v1
 

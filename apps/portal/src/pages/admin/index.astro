@@ -19,7 +19,7 @@ const alert = snapshots.alert;
     <h2>Managed applications</h2>
     {observation.apps ? (
       <ul>
-        {observation.apps.map((app: any) => <li><strong>{app.display_name}</strong>: {app.enabled ? (app.health?.status ?? 'not_configured') : app.configuration_status === 'pending_configuration' ? 'inactive — pending configuration' : 'inactive — not configured'}{app.public_url ? <> — <a href={app.public_url}>{app.public_url}</a></> : null}{app.release?.version || app.release?.commit ? <> — release: {app.release.version ?? 'not configured'} / commit: {app.release.commit ?? 'not configured'}</> : null}</li>)}
+        {observation.apps.map((app: any) => <li><strong>{app.display_name}</strong>: {app.enabled ? (app.health?.status ?? 'not_configured') : app.configuration_status === 'pending_configuration' ? 'inactive — pending configuration' : 'inactive — not configured'}{app.systemd_state ? <> — systemd: {app.systemd_state}</> : null}{app.public_url ? <> — <a href={app.public_url}>{app.public_url}</a></> : null}{app.release?.version || app.release?.commit ? <> — release: {app.release.version ?? 'not configured'} / commit: {app.release.commit ?? 'not configured'}</> : null}</li>)}
       </ul>
     ) : <p>{observation.reason}</p>}
     {observation.stale ? <p class="error">Observation is stale; host data may no longer be current.</p> : null}
@@ -31,10 +31,6 @@ const alert = snapshots.alert;
       <li>RAM used: {observation.host.memory?.used_percent ?? 'not configured'}%</li>
       <li>Disk used: {observation.host.disk?.used_percent ?? 'not configured'}%</li>
     </ul> : <p>Host health is not configured.</p>}
-  </section>
-  <section class="card">
-    <h2>Recent redacted logs</h2>
-    {observation.logs?.length ? observation.logs.map((log: any) => <details><summary>{log.source}: {log.status}</summary><pre>{log.lines?.join('\n') || 'No log lines available.'}</pre></details>) : <p>No log snapshot is configured.</p>}
   </section>
   <section class="card">
     <h2>Backup</h2>

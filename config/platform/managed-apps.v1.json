@@ -17,11 +17,9 @@
     {
       "id": "balne",
       "display_name": "Balne",
-      "enabled": false,
-      "configuration_status": "pending_configuration",
-      "public_url": null,
+      "enabled": true,
+      "public_url": "https://balne.com.ar",
       "release": null,
-      "health_check": null,
       "log_sources": []
     },
     {
