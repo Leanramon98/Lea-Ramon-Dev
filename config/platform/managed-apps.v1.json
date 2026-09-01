@@ -1,0 +1,27 @@
+{
+  "schema": "lea-ramon/managed-app-registry/v1",
+  "apps": [
+    {
+      "id": "portal",
+      "display_name": "Lea Ramon Portal",
+      "enabled": true,
+      "public_url": "https://balne.online",
+      "release": null,
+      "health_check": {
+        "url": "http://127.0.0.1:3100/",
+        "timeout_seconds": 5,
+        "expected_status": 200
+      },
+      "log_sources": ["host-system-log"]
+    },
+    {
+      "id": "balne",
+      "display_name": "Balne",
+      "enabled": false,
+      "public_url": null,
+      "release": null,
+      "health_check": null,
+      "log_sources": []
+    }
+  ]
+}

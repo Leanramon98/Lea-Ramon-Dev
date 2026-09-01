@@ -1,19 +1,50 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { ensureInitialAdmin, getSessionUser } from '../../lib/db';
+import { readPlatformSnapshots } from '../../lib/operational-snapshots.mjs';
 import { sessionCookieName } from '../../lib/security';
 
 await ensureInitialAdmin();
 const user = getSessionUser(Astro.cookies.get(sessionCookieName)?.value);
 if (!user) return Astro.redirect('/admin/login');
+const snapshots = await readPlatformSnapshots();
+const observation = snapshots.observation;
+const backup = snapshots.backup;
+const alert = snapshots.alert;
 ---
 <BaseLayout title="Portal administration">
   <p class="muted">Signed in as {user.username}</p>
   <h1>Portal administration</h1>
   <section class="card">
     <h2>Managed applications</h2>
-    <p>Managed-app telemetry is not configured yet.</p>
-    <p class="muted">This dashboard intentionally does not display invented metrics or operational data.</p>
+    {observation.apps ? (
+      <ul>
+        {observation.apps.map((app: any) => <li><strong>{app.display_name}</strong>: {app.health?.status ?? 'not_configured'}{app.public_url ? <> — <a href={app.public_url}>{app.public_url}</a></> : null}{app.release?.version || app.release?.commit ? <> — release: {app.release.version ?? 'not configured'} / commit: {app.release.commit ?? 'not configured'}</> : null}</li>)}
+      </ul>
+    ) : <p>{observation.reason}</p>}
+    {observation.stale ? <p class="error">Observation is stale; host data may no longer be current.</p> : null}
+  </section>
+  <section class="card">
+    <h2>Host health</h2>
+    {observation.host ? <ul>
+      <li>CPU load (1m): {observation.host.cpu_load_1m ?? 'not configured'}</li>
+      <li>RAM used: {observation.host.memory?.used_percent ?? 'not configured'}%</li>
+      <li>Disk used: {observation.host.disk?.used_percent ?? 'not configured'}%</li>
+    </ul> : <p>Host health is not configured.</p>}
+  </section>
+  <section class="card">
+    <h2>Recent redacted logs</h2>
+    {observation.logs?.length ? observation.logs.map((log: any) => <details><summary>{log.source}: {log.status}</summary><pre>{log.lines?.join('\n') || 'No log lines available.'}</pre></details>) : <p>No log snapshot is configured.</p>}
+  </section>
+  <section class="card">
+    <h2>Backup</h2>
+    <p>Status: {backup.status ?? 'not_configured'}{backup.stale ? ' (stale)' : ''}</p>
+    <p class="muted">{backup.evidence?.[0] ?? backup.reason ?? 'No backup snapshot is configured.'}</p>
+  </section>
+  <section class="card">
+    <h2>Alerts</h2>
+    <p>Status: {alert.status ?? 'not_configured'}{alert.stale ? ' (stale)' : ''}</p>
+    <p class="muted">{alert.status === 'unconfigured' ? 'No alert destination is configured.' : 'Only state transitions are dispatched.'}</p>
   </section>
   <form method="post" action="/admin/logout">
     <button type="submit">Log out</button>

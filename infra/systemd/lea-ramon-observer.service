@@ -1,0 +1,16 @@
+[Unit]
+Description=Lea Ramon fixed operational observer
+After=network-online.target lea-ramon-portal.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/bin/python3 /srv/platform/src/lea-ramon-dev/infra/scripts/platform-observer.py
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/platform/data/observations
+ReadOnlyPaths=/srv/platform/src/lea-ramon-dev/config/platform/managed-apps.v1.json /var/log/syslog /proc

@@ -29,6 +29,7 @@ sudo install -d -o platform -g platform -m 0750 /srv/platform/secrets
 sudo install -d -o platform -g platform -m 0755 /srv/platform/src
 sudo install -d -o root -g root -m 0755 /srv/platform/data
 sudo install -d -o 10001 -g 10001 -m 0750 /srv/platform/data/portal
+sudo install -d -o root -g root -m 0750 /srv/platform/data/observations
 sudo -u platform git clone <REPOSITORY_URL> /srv/platform/src/lea-ramon-dev
 sudo install -o platform -g platform -m 0600 /dev/null /srv/platform/secrets/portal.env
 sudoedit /srv/platform/secrets/portal.env
@@ -91,7 +92,7 @@ sudo certbot --nginx -d balne.online
 curl --fail --location https://balne.online/
 ```
 
-Open `https://balne.online/admin`, sign in with the runtime-created admin credentials, confirm the dashboard says telemetry is not configured, then use **Log out** and confirm `/admin` redirects to `/admin/login`.
+Open `https://balne.online/admin`, sign in with the runtime-created admin credentials, confirm that unconfigured operational snapshots are clearly labelled, then use **Log out** and confirm `/admin` redirects to `/admin/login`. Follow the [operations runbook](operate-platform.md) before enabling host-side observation, backups, or alerts.
 
 ## Rollback
 
@@ -102,4 +103,4 @@ Open `https://balne.online/admin`, sign in with the runtime-created admin creden
 
 ## Scope boundary
 
-Monitoring, log aggregation, backups, Docker administration, Portainer access, and managed-app telemetry are intentionally not deployed in this slice.
+The portal cannot administer Docker, read the host journal, or execute host commands. The optional operational foundation is limited to fixed host-side probes and read-only JSON snapshots; see [the operations runbook](operate-platform.md). Balne remains untouched until its runtime facts are verified.

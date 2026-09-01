@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Lea Ramon operational observer every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=true
+Unit=lea-ramon-observer.service
+
+[Install]
+WantedBy=timers.target

@@ -21,7 +21,7 @@ const { title } = Astro.props;
 <style is:global>
   :root { color: #1d2433; background: #f7f8fa; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   body { margin: 0; line-height: 1.5; }
-  main { max-width: 48rem; margin: 0 auto; padding: 4rem 1.5rem; }
+   main { max-width: 64rem; margin: 0 auto; padding: 4rem 1.5rem; }
   h1 { font-size: clamp(2.25rem, 8vw, 4.5rem); line-height: 1.05; margin: 0 0 1.5rem; }
   h2 { margin-top: 3rem; }
   a { color: #1549a1; }
@@ -30,5 +30,6 @@ const { title } = Astro.props;
   input { box-sizing: border-box; display: block; width: 100%; margin-top: .35rem; padding: .7rem; border: 1px solid #a8b0bc; border-radius: .4rem; }
   button { margin-top: 1.25rem; padding: .7rem 1rem; border: 0; border-radius: .4rem; background: #1549a1; color: white; cursor: pointer; font: inherit; }
   .error { color: #a51d2d; }
-  .muted { color: #596579; }
+   .muted { color: #596579; }
+   pre { max-height: 18rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>

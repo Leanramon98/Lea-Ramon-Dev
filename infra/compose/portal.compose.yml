@@ -15,6 +15,12 @@ services:
       - "127.0.0.1:3100:3100"
     volumes:
       - /srv/platform/data/portal:/data
+      - type: bind
+        source: /srv/platform/data/observations
+        target: /observations
+        read_only: true
+        bind:
+          create_host_path: false
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
