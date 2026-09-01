@@ -17,13 +17,24 @@ Before making changes, the operator must verify all of the following:
 Run as the deployment operator after choosing the confirmed source checkout location:
 
 ```bash
-sudo install -d -o platform -g platform -m 0750 /srv/platform/data/portal
+if ! id platform >/dev/null 2>&1; then
+  sudo useradd --system --user-group --no-create-home \
+    --home-dir /nonexistent --shell /usr/sbin/nologin platform
+fi
+sudo usermod --append --groups docker platform
+sudo -u platform /usr/bin/docker version
+
+sudo install -d -o platform -g platform -m 0750 /srv/platform
 sudo install -d -o platform -g platform -m 0750 /srv/platform/secrets
 sudo install -d -o platform -g platform -m 0755 /srv/platform/src
+sudo install -d -o root -g root -m 0755 /srv/platform/data
+sudo install -d -o 10001 -g 10001 -m 0750 /srv/platform/data/portal
 sudo -u platform git clone <REPOSITORY_URL> /srv/platform/src/lea-ramon-dev
 sudo install -o platform -g platform -m 0600 /dev/null /srv/platform/secrets/portal.env
 sudoedit /srv/platform/secrets/portal.env
 ```
+
+The `platform` user needs Docker-group membership because the systemd unit runs Docker as that user. Treat this access as privileged. The SQLite directory is owned by the container's non-root UID/GID `10001`; do not change it to `platform`.
 
 Populate the secret file using `config/apps/portal.env.example` as a shape only. Set a unique, long initial password and keep `PORTAL_DATABASE_PATH=/data/portal.db`. The secret file is outside Git, must remain mode `0600`, and must never be pasted into logs or tickets.
 
