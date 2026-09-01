@@ -1,0 +1,31 @@
+services:
+  portal:
+    build:
+      context: ../../apps/portal
+      dockerfile: Dockerfile
+    image: lea-ramon-portal:local
+    env_file:
+      - /srv/platform/secrets/portal.env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3100"
+      PORTAL_DATABASE_PATH: /data/portal.db
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - /srv/platform/data/portal:/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3100/', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

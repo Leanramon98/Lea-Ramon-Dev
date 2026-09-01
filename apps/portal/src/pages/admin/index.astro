@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { ensureInitialAdmin, getSessionUser } from '../../lib/db';
+import { sessionCookieName } from '../../lib/security';
+
+await ensureInitialAdmin();
+const user = getSessionUser(Astro.cookies.get(sessionCookieName)?.value);
+if (!user) return Astro.redirect('/admin/login');
+---
+<BaseLayout title="Portal administration">
+  <p class="muted">Signed in as {user.username}</p>
+  <h1>Portal administration</h1>
+  <section class="card">
+    <h2>Managed applications</h2>
+    <p>Managed-app telemetry is not configured yet.</p>
+    <p class="muted">This dashboard intentionally does not display invented metrics or operational data.</p>
+  </section>
+  <form method="post" action="/admin/logout">
+    <button type="submit">Log out</button>
+  </form>
+</BaseLayout>

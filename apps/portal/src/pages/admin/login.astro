@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { ensureInitialAdmin, getSessionUser } from '../../lib/db';
+import { sessionCookieName } from '../../lib/security';
+
+await ensureInitialAdmin();
+if (getSessionUser(Astro.cookies.get(sessionCookieName)?.value)) return Astro.redirect('/admin');
+const failed = Astro.url.searchParams.get('error') === 'invalid';
+---
+<BaseLayout title="Admin login">
+  <h1>Admin login</h1>
+  <section class="card">
+    {failed && <p class="error" role="alert">Invalid username or password.</p>}
+    <form method="post" action="/admin/login/action">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+      <button type="submit">Sign in</button>
+    </form>
+  </section>
+</BaseLayout>
