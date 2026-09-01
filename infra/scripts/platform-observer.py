@@ -69,6 +69,16 @@ def host_health():
     return result
 
 
+def app_observation(app):
+    enabled = app.get("enabled") is True
+    return {
+        "id": app["id"], "display_name": app["display_name"], "enabled": enabled,
+        "configuration_status": app.get("configuration_status", "configured" if enabled else "not_configured"),
+        "public_url": app.get("public_url"), "release": app.get("release"),
+        "health": health_check(app.get("health_check")) if enabled else {"status": "not_configured"},
+    }
+
+
 def collect_logs(apps):
     requested = {source for app in apps if app.get("enabled") for source in app.get("log_sources", [])}
     logs = []
@@ -100,12 +110,7 @@ def main():
         raise ValueError("unsupported managed-app registry schema")
     apps = []
     for app in registry.get("apps", []):
-        enabled = app.get("enabled") is True
-        apps.append({
-            "id": app["id"], "display_name": app["display_name"], "enabled": enabled,
-            "public_url": app.get("public_url"), "release": app.get("release"),
-            "health": health_check(app.get("health_check")) if enabled else {"status": "not_configured"},
-        })
+        apps.append(app_observation(app))
     atomic_write(OUTPUT, {"schema": "lea-ramon/observation/v1", "generated_at": now(), "status": "success", "apps": apps, "host": host_health(), "logs": collect_logs(registry["apps"])})
 
 

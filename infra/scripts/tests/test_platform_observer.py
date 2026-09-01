@@ -14,6 +14,18 @@ loader.exec_module(observer)
 
 
 class ObserverTests(unittest.TestCase):
+    def test_managed_products_are_inactive_placeholders(self):
+        registry = json.loads((Path(__file__).parents[3] / "config/platform/managed-apps.v1.json").read_text())
+        apps = {app["id"]: app for app in registry["apps"]}
+        for app_id in ("balne", "pevento", "leso-coffee"):
+            app = apps[app_id]
+            self.assertFalse(app["enabled"])
+            self.assertEqual(app["configuration_status"], "pending_configuration")
+            self.assertIsNone(app["public_url"])
+            self.assertIsNone(app["release"])
+            self.assertIsNone(app["health_check"])
+            self.assertEqual(app["log_sources"], [])
+
     def test_redact_removes_common_secret_forms(self):
         result = observer.redact("Authorization: Bearer abc.def password=top-secret AKIAABCDEFGHIJKLMNOP")
         self.assertNotIn("abc.def", result)
@@ -33,6 +45,18 @@ class ObserverTests(unittest.TestCase):
             self.assertEqual(len(logs), 1)
             self.assertEqual(logs[0]["source"], "host-system-log")
             self.assertEqual(len(logs[0]["lines"]), observer.MAX_LOG_LINES)
+
+    def test_pending_app_has_no_runtime_configuration_in_snapshot(self):
+        app = observer.app_observation({
+            "id": "pevento", "display_name": "Pevento", "enabled": False,
+            "configuration_status": "pending_configuration", "public_url": None,
+            "release": None, "health_check": None,
+        })
+        self.assertEqual(app["configuration_status"], "pending_configuration")
+        self.assertFalse(app["enabled"])
+        self.assertEqual(app["health"], {"status": "not_configured"})
+        self.assertIsNone(app["public_url"])
+        self.assertIsNone(app["release"])
 
     def test_atomic_write_produces_parseable_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:

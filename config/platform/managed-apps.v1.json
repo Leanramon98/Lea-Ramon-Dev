@@ -18,6 +18,27 @@
       "id": "balne",
       "display_name": "Balne",
       "enabled": false,
+      "configuration_status": "pending_configuration",
+      "public_url": null,
+      "release": null,
+      "health_check": null,
+      "log_sources": []
+    },
+    {
+      "id": "pevento",
+      "display_name": "Pevento",
+      "enabled": false,
+      "configuration_status": "pending_configuration",
+      "public_url": null,
+      "release": null,
+      "health_check": null,
+      "log_sources": []
+    },
+    {
+      "id": "leso-coffee",
+      "display_name": "LESO Coffee",
+      "enabled": false,
+      "configuration_status": "pending_configuration",
       "public_url": null,
       "release": null,
       "health_check": null,
