@@ -9,6 +9,9 @@ Type=oneshot
 RemainAfterExit=yes
 User=platform
 Group=platform
+StateDirectory=lea-ramon-portal
+StateDirectoryMode=0750
+Environment=HOME=/var/lib/lea-ramon-portal
 WorkingDirectory=/srv/platform/src/lea-ramon-dev
 ExecStart=/usr/bin/docker compose --project-name lea-ramon-portal --env-file /srv/platform/secrets/portal.env -f /srv/platform/src/lea-ramon-dev/infra/compose/portal.compose.yml up --detach --build --remove-orphans
 ExecStop=/usr/bin/docker compose --project-name lea-ramon-portal --env-file /srv/platform/secrets/portal.env -f /srv/platform/src/lea-ramon-dev/infra/compose/portal.compose.yml down
