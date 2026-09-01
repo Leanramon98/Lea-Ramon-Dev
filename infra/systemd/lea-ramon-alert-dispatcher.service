@@ -1,0 +1,16 @@
+[Unit]
+Description=Lea Ramon operational alert transition dispatcher
+After=lea-ramon-observer.service lea-ramon-backup.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=-/srv/platform/secrets/alerts.env
+ExecStart=/usr/bin/python3 /srv/platform/src/lea-ramon-dev/infra/scripts/platform-alert-dispatcher.py
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/platform/data/observations /srv/platform/data/alerts

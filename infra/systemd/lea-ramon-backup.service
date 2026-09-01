@@ -1,0 +1,17 @@
+[Unit]
+Description=Lea Ramon encrypted R2 backup runner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=-/srv/platform/secrets/backup-r2.env
+ExecStart=/usr/bin/env bash /srv/platform/src/lea-ramon-dev/infra/scripts/platform-backup.sh
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/platform/data/observations
+ReadOnlyPaths=/srv/platform/data/portal /srv/platform/secrets/backup-restic-password

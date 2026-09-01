@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Lea Ramon encrypted backup daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+Unit=lea-ramon-backup.service
+
+[Install]
+WantedBy=timers.target

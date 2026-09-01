@@ -1,0 +1,10 @@
+[Unit]
+Description=Evaluate Lea Ramon alert transitions every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:15
+Persistent=true
+Unit=lea-ramon-alert-dispatcher.service
+
+[Install]
+WantedBy=timers.target
